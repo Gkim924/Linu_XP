@@ -1,0 +1,108 @@
+CHECKPOINT1:
+
+Bug: One bug that I’ve noticed is the fact that text wraps around 
+(rather than going to the next line) and the top left always shows blank.
+Fix: reset x & Y coordinates to 0 in clear function. and rearanged putc function to incremente y when x is at the last column.
+
+Bug: There’s a keyboard interrupt that occurs when you press button and another one when you ”un-press” a key. causing an issue where it prints werid values when you unpress a key.
+Fix: only account for pressed buttons and disreagrd unpressed buttons interrupts.
+
+Each one resulting in a special scan code, most likely you’re printing the scan code of the unpressed key as well.
+
+Bug: After implementing paging, a triple-fault would occur whenever
+both paging and a device (keyboard/RTC) were both initialized.
+Fix: The page for video memory wasn't correctly initialized; we 
+initialized a PDE instead of a PTE. 
+Line 41 of paging.c ... page_directory[VIDEO_MEM_ADDR] |= RW_PRESENT_ENABLE; -> page_table[VIDEO_MEM_ADDR] |= RW_PRESENT_ENABLE;
+
+Bug: After pulling from dev, received an error where the compiler couldn't find some files (idt.c, paging.c, etc)
+Fix: Merging caused duplicate files to be formed; we needed to delete those duplicate files.
+
+Bug: RTC would cause a fault when init was called because RTC IDT entry was not marked present when the IDT was setup.
+Fix: Changed IDT init function to mark RTC interrupt as present.
+
+Bug: RTC init would cause IRQ0 to trigger instead of showing RTC test on the screen. 
+Fix: The PIC EOI was improperly set up and not sending the EOI to the slave. Changed EOI to send to master and slave, allowing for init to happen correctly.
+
+CHECKPOINT2:
+
+Bug: Sometimes reading the file in file system with a valid string does not result in a successful copy 
+      into the dentry.
+Fix: Compare without the null terminated value in string compare. 
+
+Bug: Page fault when trying to parse mod->addr.
+Fix: Setting the mod->addr to a variable at the start of the entry. We know that is clearly defined during execution.
+
+
+Bug: Backspace sometimes doesn't delete first charater in line, it wraps weridly
+Fix:ended up having to change the order of how the cooridnates are calculated as it was modding the x coordinate
+        before incrementing/decrementing the Y coordinate
+        
+Bug:initally we only had one keyboard buffer that got cleared whenever we press ENTER
+Fix:created two buffers one that copies into the second buffer when ENTER is pressed
+
+Bug: When key is pressed to change RTC frequency it takes multiple key presses to actually register the change.
+Fix: The variable used to keep track of the key pressed was not being reset correctly.
+
+Bug: Interrupt frequency was not changing correctly.
+Fix: Had the port and the frequency reversed when sending to the RTC
+
+Bug: Intermittent Page Fault appearing while developing.
+Fix: Using printf with single quotes causes a page fault.
+
+
+CHECKPOINT3:
+
+Bug: Shell loads then gets stuck in infinite while loop.
+Fix: The terminal read function was not handling the enter key properly, added flags to wait for enter to be pressed before doing a read.
+
+Bug: Multiple page faults when running execute.
+Fix: PCB was not set up correctly causing zero dereference, also we were using memcopy for loading the programs which was not working correctly,
+     changed to the read function in the FS instead.
+
+Bug: Testprint was not pasing the argument correctly.
+Fix: Used strcpy instead of strncpy which has issues.
+
+Bug: Programs only work while using GDB.
+Fix: The terminal read was not clearing the passed in buffer causing intermittent issues with argument parsing.
+
+Bug: Backspace deletes OS prompt when running Shell
+Fix: added a checker to see if terminal buffer is empty then disregard any backspace presses
+
+Bug: Using function pointers for the read functions caused an error.
+Fix: the read functions for the file system didn’t match; had to change the parameters and the code to match the read functions for rtc.
+
+
+CHECKPOINT 4:
+
+Bug: Closed all FDs including 0,1 which caused unexpected behavior
+Fix: Added a check to return when FD 0/1 are passed in to close
+
+Bug: unable to read verylargetextwithverylongname.txt 
+FIX: filename buffer was not large enough for the way we had our implementation setup.
+
+Bug: Argument was not being read correctly by getArgs.
+Fix: Had indexing error after trying to find start of argument.
+
+Bug: Argument was always empty.
+Fix: Had to transfer the argument over before setting up paging, since after paging was set up the argument
+would be cleared.
+
+CHECKPOINT 5:
+
+Bug: When running execute("shell") multiple times from terminal.c, on the second shell the system would freeze and not respond to the keyboard
+Fix: The keyboard EOI was not being sent when the keyboard handler diverted the program to run exec
+
+Bug: Page fault when trying to save screen video data into buffers
+Fix: Did not have extra video pages mapped into page directory, mapped pages with correct permissions and flags
+
+Fix: Did not have extra video pages mapped into page directory, mapped pages with correct permissions and flags
+
+Bug: When you run counter on one terminal without typing in an argument (0,1,2), and switch to another terminal, then type in the argument and press enter, counter still runs.
+Fix: N/A
+
+Bug: When you run counter, then switch to a different terminal, some of the values printed shows up on the second terminal.
+Fix: N/A
+
+Bug: fish just straight up does not work
+Fix: N/A
